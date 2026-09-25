@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>دانشیار - دانشنامه هوشمند</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #f4f6f9;
+      color: #333;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 20px;
+    }
+
+    .app-title {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 8px;
+      background: #ffffff;
+      padding: 6px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    #searchInput {
+      flex: 1;
+      padding: 12px 14px;
+      font-size: 1rem;
+      border: 1px solid transparent;
+      outline: none;
+      border-radius: 8px;
+    }
+
+    #searchInput:focus {
+      border-color: #ddd;
+    }
+
+    #searchBtn {
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #ffffff;
+      background-color: #3498db; /* رنگ پیش‌فرض */
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    #searchBtn:active {
+      transform: scale(0.97);
+    }
+
+    .results-area {
+      margin-top: 20px;
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 12px;
+      min-height: 100px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="app-title">📖 دانشیار (دانشنامه و اطلاعات عمومی)</div>
+
+    <div class="search-box">
+      <input id="searchInput" type="search" placeholder="کلمه یا سوال مورد نظر را بنویسید..." autocomplete="off">
+      <button id="searchBtn" type="button">جستجو</button>
+    </div>
+
+    <!-- محل نمایش نتایج جستجو -->
+    <div class="results-area" id="resultsArea">
+      آماده جستجو... کلمه مورد نظرتان را وارد کنید.
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const input = document.getElementById('searchInput');
+      const btn = document.getElementById('searchBtn');
+      const results = document.getElementById('resultsArea');
+
+      // ۱. کادر ورودی در هر بار لود خالی شود و آماده تایپ باشد
+      input.value = '';
+      input.focus();
+
+      // ۲. فعال بودن کلید
+      btn.disabled = false;
+
+      // ۳. تغییر رنگ کلید در هر بار اجرای صفحه (رنگ تصادفی شاد و خوانا)
+      const randomHue = Math.floor(Math.random() * 360);
+      btn.style.backgroundColor = `hsl(${randomHue}, 70%, 42%)`;
+
+      // تابع اجرای جستجو
+      function handleSearch() {
+        const query = input.value.trim();
+        if (!query) {
+          results.innerHTML = '<span style="color: red;">لطفاً کلمه‌ای برای جستجو بنویسید.</span>';
+          input.focus();
+          return;
+        }
+
+        results.innerHTML = `در حال جستجو برای: <b>${query}</b> ...`;
+        // در گام بعد اینجا موتور دانشنامه را وصل می‌کنیم
+      }
+
+      // گوش دادن به کلیک دکمه
+      btn.addEventListener('click', handleSearch);
+
+      // گوش دادن به دکمه Enter کیبورد گوشی
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          handleSearch();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
