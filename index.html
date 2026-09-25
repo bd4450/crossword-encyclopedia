@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>دانشنامه جدولی</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #f4f6f8;
+      color: #222;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .search-box {
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto 20px;
+    }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .badge {
+      display: inline-block;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h2>دانشنامه جدولی</h2>
+    <p>بانک اطلاعات عمومی، اصطلاحات و کلیدواژه‌ها</p>
+  </div>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="جستجو در موضوع، کلیدواژه یا شرح...">
+  </div>
+
+  <div id="resultsList">
+    <!-- نتایج اینجا نمایش داده می‌شوند -->
+  </div>
+
+  <script src="encyclopedia_data.js"></script>
+  <script>
+    // کدهای موتور جستجو در مراحل بعد اینجا قرار می‌گیرد
+  </script>
+</body>
+</html>
