@@ -64,7 +64,55 @@
 
   <script src="encyclopedia_data.js"></script>
   <script>
-    // کدهای موتور جستجو در مراحل بعد اینجا قرار می‌گیرد
+      <script>
+    const searchInput = document.getElementById('searchInput');
+    const resultsList = document.getElementById('resultsList');
+
+    function renderResults(items) {
+      if (!items || items.length === 0) {
+        resultsList.innerHTML = '<p style="text-align:center; color:#888;">موردی یافت نشد.</p>';
+        return;
+      }
+
+      resultsList.innerHTML = items.map(item => `
+        <div class="card">
+          <span class="badge">${item.category || 'عمومی'}</span>
+          <h3 style="margin: 4px 0 8px 0; color: #1e293b;">${item.title}</h3>
+          <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.6; color: #475569;">${item.summary}</p>
+          ${item.clues && item.clues.length > 0 ? `
+            <div style="font-size: 12px; color: #0284c7;">
+              <strong>کلیدواژه‌ها / سوالات:</strong> ${item.clues.join(' ، ')}
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    // نمایش همه داده‌ها در ابتدا
+    if (typeof encyclopediaData !== 'undefined') {
+      renderResults(encyclopediaData);
+    }
+
+    // جستجوی زنده
+    searchInput.addEventListener('input', function(e) {
+      const q = e.target.value.trim().toLowerCase();
+      if (!q) {
+        renderResults(encyclopediaData);
+        return;
+      }
+
+      const filtered = encyclopediaData.filter(item => {
+        const inTitle = item.title && item.title.toLowerCase().includes(q);
+        const inSummary = item.summary && item.summary.toLowerCase().includes(q);
+        const inClues = item.clues && item.clues.some(clue => clue.toLowerCase().includes(q));
+        const inCat = item.category && item.category.toLowerCase().includes(q);
+        return inTitle || inSummary || inClues || inCat;
+      });
+
+      renderResults(filtered);
+    });
+  </script>
+
   </script>
 </body>
 </html>
