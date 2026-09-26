@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>دانشنامه جدولی</title>
+  <style>
+    body {
+      font-family: Tahoma, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 15px;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    h1 {
+      text-align: center;
+      font-size: 20px;
+      margin-top: 0;
+      margin-bottom: 12px;
+      color: #2c3e50;
+    }
+    /* چراغ وضعیت اتصال داده */
+    .status-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      margin-bottom: 15px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background-color: #ffebee;
+      color: #c62828;
+      transition: all 0.3s ease;
+    }
+    .status-badge.ok {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #c62828;
+      margin-left: 8px;
+    }
+    .status-badge.ok .status-dot {
+      background-color: #2e7d32;
+    }
+    /* کادر و دکمه جستجو */
+    .search-box {
+      display: flex;
+      gap: 8px;
+      position: relative;
+    }
+    .input-wrapper {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    input {
+      width: 100%;
+      padding: 12px 35px 12px 12px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    input:focus {
+      border-color: #3498db;
+    }
+    .clear-btn {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: #999;
+      cursor: pointer;
+      display: none;
+      padding: 4px;
+      line-height: 1;
+    }
+    .btn-search {
+      padding: 0 20px;
+      background-color: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-search:active {
+      background-color: #2980b9;
+    }
+    /* بخش نتایج */
+    #results {
+      margin-top: 20px;
+    }
+    .card {
+      background: #fafbfc;
+      border-right: 4px solid #3498db;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .card .ans {
+      font-size: 17px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .card .letters {
+      font-size: 12px;
+      color: #e67e22;
+      margin-right: 6px;
+    }
+    .card .clue {
+      font-size: 14px;
+      color: #555;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+    .card .badge {
+      display: inline-block;
+      font-size: 11px;
+      background: #eef2f7;
+      color: #4a6572;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 6px;
+    }
+    .empty {
+      text-align: center;
+      color: #999;
+      padding: 20px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>دانشنامه و حل جدول</h1>
+
+  <!-- چراغ وضعیت اتصال فایل داده -->
+  <div id="statusBadge" class="status-badge">
+    <span class="status-dot"></span>
+    <span id="statusText">در حال بررسی بانک داده...</span>
+  </div>
+
+  <div class="search-box">
+    <div class="input-wrapper">
+      <input type="text" id="searchInput" placeholder="جستجو..." autocomplete="off">
+      <button id="clearBtn" class="clear-btn" onclick="clearInput()" title="پاک کردن">&times;</button>
+    </div>
+    <button class="btn-search" onclick="doSearch()">جستجو</button>
+  </div>
+
+  <div id="results">
+    <div class="empty">برای مشاهده نتایج، عبارت مورد نظر را جستجو کنید.</div>
+  </div>
+</div>
+
+<!-- اتصال به فایل داده -->
+<script src="data1.js"></script>
+
+<script>
+  // دریافت مرجع دیتابیس (پشتیبانی از هر دو نام)
+  function getDataSource() {
+    if (window.CROSSWORD_DATA && Array.isArray(window.CROSSWORD_DATA)) {
+      return window.CROSSWORD_DATA;
+    }
+    if (window.TABLE_DATA && Array.isArray(window.TABLE_DATA)) {
+      return window.TABLE_DATA;
+    }
+    return null;
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const badge = document.getElementById("statusBadge");
+    const statusText = document.getElementById("statusText");
+    const input = document.getElementById("searchInput");
+    const clearBtn = document.getElementById("clearBtn");
+
+    const data = getDataSource();
+
+    if (data) {
+      badge.classList.add("ok");
+      statusText.innerText = "بانک داده متصل است (" + data.length + " مدخل)";
+    } else {
+      badge.classList.remove("ok");
+      statusText.innerText = "خطا: فایل data1.js بارگذاری نشد یا ساختار آن اشتباه است.";
+    }
+
+    // جستجو با دکمه Enter
+    input.addEventListener("keyup", function(e) {
+      if (e.key === "Enter") {
+        doSearch();
+      }
+    });
+
+    // کنترل دکمه ضربدر برای پاک کردن کادر
+    input.addEventListener("input", function() {
+      clearBtn.style.display = this.value ? "block" : "none";
+    });
+  });
+
+  function clearInput() {
+    const input = document.getElementById("searchInput");
+    input.value = "";
+    document.getElementById("clearBtn").style.display = "none";
+    input.focus();
+  }
+
+  // یکدست‌سازی حروف فارسی
+  function normalizeText(text) {
+    if (!text) return "";
+    return text
+      .toString()
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")
+      .replace(/ي/g, "ی")
+      .replace(/ك/g, "ک")
+      .replace(/ة/g, "ه")
+      .replace(/[\u064B-\u065F]/g, "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function doSearch() {
+    const rawQuery = document.getElementById("searchInput").value.trim();
+    const resultsContainer = document.getElementById("results");
+    const data = getDataSource();
+
+    if (!rawQuery) {
+      resultsContainer.innerHTML = '<div class="empty">لطفاً عبارتی برای جستجو وارد کنید.</div>';
+      return;
+    }
+
+    if (!data) {
+      resultsContainer.innerHTML = '<div class="empty" style="color:red">بانک داده در دسترس نیست.</div>';
+      return;
+    }
+
+    const query = normalizeText(rawQuery);
+    let matched = [];
+
+    // پشتیبانی از الگوی جدولی (مانند د_اوند یا د.اوند)
+    const isPattern = query.includes("_") || query.includes(".");
+
+    if (isPattern) {
+      const regexStr = "^" + query.replace(/[_.]/g, ".") + "$";
+      const regex = new RegExp(regexStr);
+      matched = data.filter(item => {
+        const normAns = normalizeText(item.a).replace(/\s+/g, "");
+        return regex.test(normAns);
+      });
+    } else {
+      // جستجوی فقط در داده‌های داخلی (پاسخ a، سرنخ c و موضوع cat)
+      matched = data.filter(item => {
+        const normAns = normalizeText(item.a);
+        const normClue = normalizeText(item.c);
+        const normCat = normalizeText(item.cat || "");
+        return normAns.includes(query) || normClue.includes(query) || normCat.includes(query);
+      });
+    }
+
+    renderResults(matched);
+  }
+
+  function renderResults(list) {
+    const container = document.getElementById("results");
+    if (list.length === 0) {
+      container.innerHTML = '<div class="empty">موردی در بانک داده یافت نشد.</div>';
+      return;
+    }
+
+    let html = "";
+    list.slice(0, 100).forEach(item => {
+      const letterCount = item.a ? item.a.replace(/\s+/g, "").length : 0;
+      html += `
+        <div class="card">
+          <span class="ans">${item.a}</span>
+          <span class="letters">(${letterCount} حرفی)</span>
+          <div class="clue">${item.c}</div>
+          <span class="badge">${item.cat || "عمومی"}</span>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+</script>
+
+</body>
+</html>
