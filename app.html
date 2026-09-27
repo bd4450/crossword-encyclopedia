@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>دانشیار - دانشنامه و حل جدول متقاطع</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --warning: #d97706;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: Tahoma, 'Vazirmatn', sans-serif; background-color: var(--bg); margin: 0; padding: 12px; color: var(--text); line-height: 1.5; }
+    .container { max-width: 680px; margin: 0 auto; background: var(--card-bg); padding: 18px; border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    h1 { text-align: center; font-size: 20px; margin: 0 0 12px 0; color: #0f172a; }
+
+    .status-badge { display: flex; align-items: center; justify-content: center; font-size: 13px; margin-bottom: 15px; padding: 6px 14px; border-radius: 20px; background-color: #fee2e2; color: #991b1b; transition: all .3s ease; }
+    .status-badge.ok { background-color: #dcfce7; color: var(--success); }
+    .status-dot { width: 9px; height: 9px; border-radius: 50%; background-color: currentColor; margin-left: 8px; }
+
+    .search-box { display: flex; gap: 8px; }
+    .input-wrapper { flex: 1; position: relative; display: flex; align-items: center; }
+    input { width: 100%; padding: 12px 36px 12px 12px; font-size: 15px; border: 2px solid var(--border); border-radius: 10px; outline: none; transition: border-color .2s; font-family: inherit; }
+    input:focus { border-color: var(--primary); }
+    .clear-btn { position: absolute; left: 10px; background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer; display: none; line-height: 1; }
+    .btn-search { padding: 0 20px; background-color: var(--primary); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; font-family: inherit; cursor: pointer; transition: background .2s; }
+    .btn-search:active { background-color: var(--primary-dark); }
+
+    .filters { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 4px 0; margin-bottom: 8px; }
+    .filter-chip { font-size: 12px; padding: 4px 10px; border-radius: 14px; background: #f1f5f9; color: var(--text-muted); border: 1px solid var(--border); cursor: pointer; white-space: nowrap; }
+    .filter-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .section-title { margin: 20px 0 10px; font-size: 15px; color: #0f172a; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .card { background: #f8fafc; border-right: 4px solid var(--primary); padding: 12px; margin-bottom: 8px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .card.summary-card { border-right-color: var(--success); background: #f0fdf4; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; }
+    .card .ans { font-size: 16px; font-weight: bold; color: #0f172a; }
+    .card .letters { font-size: 12px; color: var(--warning); font-weight: bold; }
+    .card .clue { font-size: 13.5px; color: #475569; margin-top: 5px; line-height: 1.6; }
+    .card .badge { display: inline-block; font-size: 11px; background: #e2e8f0; color: #475569; padding: 2px 8px; border-radius: 4px; margin-top: 6px; }
+
+    /* جداول استخراج‌شده */
+    .table-container { width: 100%; overflow-x: auto; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); }
+    .custom-table { width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; background: #fff; }
+    .custom-table th { background-color: #f1f5f9; color: #334155; padding: 9px 12px; font-weight: bold; border-bottom: 2px solid var(--border); }
+    .custom-table td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+    .custom-table tr:hover { background-color: #f8fafc; }
+    .badge-count { background: #fef3c7; color: #b45309; padding: 2px 7px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+
+    .empty { text-align: center; color: var(--text-muted); padding: 18px; font-size: 13px; background: #f8fafc; border-radius: 8px; }
+    .hint { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-top: 8px; }
+    .online-status { font-size: 12.5px; color: #475569; margin: 8px 0; font-weight: 500; }
+    mark { background-color: #fde047; color: #854d0e; padding: 0 3px; border-radius: 2px; }
+    .loader { display: inline-block; width: 12px; height: 12px; border: 2px solid #cbd5e1; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-left: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>دانشیار و حل جدول متقاطع</h1>
+
+  <div id="statusBadge" class="status-badge">
+    <span class="status-dot"></span>
+    <span id="statusText">در حال ارزیابی بانک داده‌ها...</span>
+  </div>
+
+  <div class="search-box">
+    <div class="input-wrapper">
+      <input type="text" id="searchInput" placeholder="نویسنده، کتاب، پایتخت، رود، کوه یا الگوی کلمه (مثل س..ور)" autocomplete="off">
+      <button id="clearBtn" class="clear-btn" onclick="clearInput()">&times;</button>
+    </div>
+    <button class="btn-search" onclick="doSearch()">جستجو</button>
+  </div>
+
+  <div class="filters">
+    <button class="filter-chip active" onclick="setFilter('all', this)">همه موارد</button>
+    <button class="filter-chip" onclick="setFilter('ادبیات', this)">ادبیات و مفاخر</button>
+    <button class="filter-chip" onclick="setFilter('جغرافیا', this)">جغرافیا و کشورها</button>
+    <button class="filter-chip" onclick="setFilter('عمومی', this)">عمومی و جدول</button>
+  </div>
+
+  <div class="hint">
+    نکته: برای جستجوی حروف جاافتاده از نقطه یا خط تیره استفاده کنید (مثال: <b>ت.را.</b> برای تهران یا تیراژه).
+  </div>
+
+  <div id="results">
+    <div class="empty">برای یافتن واژه یا حل جدول، عبارت را جستجو کنید.</div>
+  </div>
+</div>
+
+<!-- فایل داده‌های آفلاین -->
+<script src="data1.js"></script>
+
+<script>
+  let currentCategory = 'all';
+
+  function setFilter(cat, btn) {
+    currentCategory = cat;
+    document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+    btn.classList.add('active');
+    const inputVal = document.getElementById("searchInput").value.trim();
+    if (inputVal) doSearch();
+  }
+
+  // پایگاه داده پیش‌فرض برای اطلاعات پایه جغرافیایی و ادبیاتی
+  const BUILTIN_BACKUP_DATA = [
+    // جغرافیا
+    { a: "تهران", c: "پایتخت ایران", cat: "جغرافیا" },
+    { a: "پاریس", c: "پایتخت فرانسه، عروس شهرهای اروپا", cat: "جغرافیا" },
+    { a: "دماوند", c: "بلندترین کوه ایران و رشته‌کوه البرز", cat: "جغرافیا" },
+    { a: "اورست", c: "بلندترین قله جهان در هیمالیا", cat: "جغرافیا" },
+    { a: "کارون", c: "پرآب‌ترین و طولانی‌ترین رود ایران", cat: "جغرافیا" },
+    { a: "نیل", c: "طولانی‌ترین رود جهان در قاره آفریقا", cat: "جغرافیا" },
+    { a: "اروندکنار", c: "از شهرهای استان خوزستان در دهانه اروندرود", cat: "جغرافیا" },
+    { a: "کاسپین", c: "دریای خزر یا مازندران، بزرگترین دریاچه جهان", cat: "جغرافیا" },
+    { a: "بایکال", c: "عمیق‌ترین دریاچه آب شیرین جهان در روسیه", cat: "جغرافیا" },
+    { a: "هرمز", c: "تنگه مهم میان خلیج فارس و دریای عمان", cat: "جغرافیا" },
+    { a: "جبل‌الطارق", c: "تنگه میان دریای مدیترانه و اقیانوس اطلس", cat: "جغرافیا" },
+    { a: "لوت", c: "دشت و کویر وسیع در جنوب شرقی ایران", cat: "جغرافیا" },
+    { a: "صحرا", c: "بزرگترین بیابان گرم جهان در شمال آفریقا", cat: "جغرافیا" },
+    // ادبیات
+    { a: "فردوسی", c: "سراینده شاهنامه، دهقان طوس", cat: "ادبیات" },
+    { a: "شاهنامه", c: "اثر حماسی ابوالقاسم فردوسی", cat: "ادبیات" },
+    { a: "حافظ", c: "لسان‌الغیب، غزلسرای برجسته ایرانی", cat: "ادبیات" },
+    { a: "سعدی", c: "نویسنده گلستان و بوستان، استاد سخن", cat: "ادبیات" },
+    { a: "گلستان", c: "شاهکار نثر آهنگین سعدی شیرازی", cat: "ادبیات" },
+    { a: "بینوایان", c: "رمان مشهور ویکتور هوگو", cat: "ادبیات" },
+    { a: "ویکتور هوگو", c: "نویسنده فرانسوی رمان بینوایان و گوژپشت نتردام", cat: "ادبیات" },
+    { a: "جنگ و صلح", c: "رمان مشهور لئو تولستوی", cat: "ادبیات" },
+    { a: "تولستوی", c: "نویسنده و فیلسوف نامدار روس", cat: "ادبیات" },
+    { a: "صد سال تنهایی", c: "شاهکار گابریل گارسیا مارکز در سبک رئالیسم جادویی", cat: "ادبیات" },
+    { a: "مارکز", c: "نویسنده کلمبیایی برنده نوبل ادبیات", cat: "ادبیات" },
+    { a: "شکسپیر", c: "نمایشنامه‌نویس شهیر انگلیسی خالق هملت و مکبث", cat: "ادبیات" },
+    { a: "هملت", c: "تراژدی جاودانه ویلیام شکسپیر", cat: "ادبیات" },
+    { a: "افلاطون", c: "فیلسوف بزرگ یونان باستان و نگارنده جمهور", cat: "ادبیات" },
+    { a: "ارسطو", c: "فیلسوف یونانی ملقب به معلم اول", cat: "ادبیات" }
+  ];
+
+  function getDataSource() {
+    let source = [];
+    if (window.CROSSWORD_DATA && Array.isArray(window.CROSSWORD_DATA)) source = window.CROSSWORD_DATA;
+    else if (window.TABLE_DATA && Array.isArray(window.TABLE_DATA)) source = window.TABLE_DATA;
+    else if (window.DATA && Array.isArray(window.DATA)) source = window.DATA;
+    else if (window.data1 && Array.isArray(window.data1)) source = window.data1;
+
+    // ترکیب داده‌های خارجی با داده‌های پشتیبان پیش‌فرض برای اطمینان از کامل بودن
+    if (source.length === 0) return BUILTIN_BACKUP_DATA;
+    return source.concat(BUILTIN_BACKUP_DATA);
+  }
+
+  function initApp() {
+    const badge = document.getElementById("statusBadge");
+    const statusText = document.getElementById("statusText");
+    const input = document.getElementById("searchInput");
+    const clearBtn = document.getElementById("clearBtn");
+
+    const data = getDataSource();
+    if (data && data.length > 0) {
+      badge.classList.add("ok");
+      statusText.innerText = "بانک داده متصل است (" + data.length.toLocaleString("fa-IR") + " مدخل تخصصی)";
+    } else {
+      badge.classList.remove("ok");
+      statusText.innerText = "عدم دسترسی به بانک داده.";
+    }
+
+    input.addEventListener("keyup", (e) => { if (e.key === "Enter") doSearch(); });
+    input.addEventListener("input", function() { clearBtn.style.display = this.value ? "block" : "none"; });
+  }
+
+  window.addEventListener("DOMContentLoaded", initApp);
+
+  function clearInput() {
+    const input = document.getElementById("searchInput");
+    input.value = "";
+    document.getElementById("clearBtn").style.display = "none";
+    input.focus();
+  }
+
+  function normalizeText(text) {
+    if (!text) return "";
+    return text.toString()
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")
+      .replace(/ي/g, "ی")
+      .replace(/ك/g, "ک")
+      .replace(/ة/g, "ه")
+      .replace(/[\u064B-\u065F]/g, "")
+      .replace(/[؟?!.،,:;'"“”‘’(){}\[\]]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
+  function countLetters(text) {
+    if (!text) return 0;
+    return text.replace(/[^آ-یA-Za-z0-9]/g, "").length;
+  }
+
+  // حذف کلمات زائد از سوالات برای رسیدن به مغز واژه
+  const STOP_WORDS = new Set([
+    "چیست","چی","چیه","یعنی","تعریف","مفهوم","معنی","معنا",
+    "کجاست","کجا","کدام","کدوم","چه","چه‌کسی","کیست","کی","چه‌چیزی",
+    "است","بود","باشد","میباشد","می‌شود","میشود","هست","هستند",
+    "را","به","از","در","روی","برای","با","بدون","تا","و","یا","اما",
+    "این","آن","یک","هم","نیز","های","ها","ترین",
+    "نام","اسم","عنوان","پاسخ","اثر","اثری","کتاب","نویسنده"
+  ]);
+
+  function tokenizeQuery(q) {
+    const norm = normalizeText(q);
+    if (!norm) return [];
+    const parts = norm.split(" ").filter(Boolean);
+    const tokens = parts.filter(w => w.length >= 2 && !STOP_WORDS.has(w));
+    return tokens.length ? tokens : parts;
+  }
+
+  function highlightMatches(text, tokens) {
+    if (!text) return "";
+    if (!tokens || tokens.length === 0) return text;
+    let safeTokens = tokens.filter(t => t.length >= 2).map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    if (!safeTokens.length) return text;
+    const regex = new RegExp(`(${safeTokens.join("|")})`, "gi");
+    return text.replace(regex, "<mark>$1</mark>");
+  }
+
+  // سیستم امتیازدهی دقیق بر اساس ارتباط منطقی
+  function evaluateItem(item, tokens, fullQueryNorm) {
+    const a = normalizeText(item.a);
+    const c = normalizeText(item.c);
+
+    // فیلتر دسته‌بندی
+    if (currentCategory !== 'all') {
+      const itemCat = item.cat || "عمومی";
+      if (!itemCat.includes(currentCategory)) return 0;
+    }
+
+    let score = 0;
+    // انطباق کامل پاسخ
+    if (a === fullQueryNorm) score += 300;
+    else if (a.startsWith(fullQueryNorm)) score += 140;
+    else if (a.includes(fullQueryNorm)) score += 100;
+
+    // انطباق کامل شرح
+    if (c === fullQueryNorm) score += 180;
+    else if (c.includes(fullQueryNorm)) score += 80;
+
+    let matchedInA = 0;
+    let matchedInC = 0;
+
+    for (const t of tokens) {
+      if (a.includes(t)) matchedInA++;
+      if (c.includes(t)) matchedInC++;
+    }
+
+    const totalMatches = matchedInA + matchedInC;
+    if (tokens.length > 0 && totalMatches === 0) return 0;
+
+    score += (matchedInA * 45);
+    score += (matchedInC * 20);
+
+    // اگر تمام کلمات کلیدی کاربر در سرنخ یا پاسخ وجود داشت امتیاز تشویقی تعلق گیرد
+    if (tokens.length > 1 && totalMatches >= tokens.length) {
+      score += 70;
+    }
+
+    return score >= 30 ? score : 0;
+  }
+
+  function doSearch() {
+    const rawQuery = document.getElementById("searchInput").value.trim();
+    const resultsContainer = document.getElementById("results");
+    const data = getDataSource();
+
+    if (!rawQuery) {
+      resultsContainer.innerHTML = '<div class="empty">لطفاً واژه، اثر، کوه، رود یا پایتخت مورد نظر را بنویسید.</div>';
+      return;
+    }
+
+    const queryNorm = normalizeText(rawQuery);
+    const isPattern = queryNorm.includes("_") || queryNorm.includes(".") || queryNorm.includes("-");
+
+    // حل جدول حروفی (مانند ت.را.)
+    if (isPattern) {
+      const regexPattern = "^" + queryNorm.replace(/[_.-]/g, ".") + "$";
+      const regex = new RegExp(regexPattern);
+      const offlineMatched = (data || []).filter(item => {
+        const normAns = normalizeText(item.a).replace(/\s+/g, "");
+        return regex.test(normAns);
+      });
+      renderAllResults(offlineMatched, rawQuery, []);
+      fetchOnlineAndAppend(rawQuery, true);
+      return;
+    }
+
+    const tokens = tokenizeQuery(rawQuery);
+    let offlineMatched = [];
+
+    if (data) {
+      const scored = [];
+      for (let i = 0; i < data.length; i++) {
+        const item = data[i];
+        const score = evaluateItem(item, tokens, queryNorm);
+        if (score > 0) scored.push({ item, score });
+      }
+      // مرتب‌سازی از مرتبط‌ترین به نامرتبط‌ترین
+      scored.sort((a, b) => b.score - a.score);
+      offlineMatched = scored.map(x => x.item);
+    }
+
+    renderAllResults(offlineMatched, rawQuery, tokens);
+    fetchOnlineAndAppend(rawQuery, false);
+  }
+
+  function renderOffline(list, queryText, tokens) {
+    if (!list || list.length === 0) {
+      return `
+        <div class="section-title"><span>نتایج بانک داخلی</span> <span style="font-size:12px;font-weight:normal;color:#64748b;">(۰ مورد)</span></div>
+        <div class="empty">موردی متناسب با این عبارت در بانک آفلاین پیدا نشد؛ در حال استخراج از پایگاه آنلاین...</div>
+      `;
+    }
+
+    let html = `<div class="section-title"><span>نتایج بانک آفلاین</span> <span style="font-size:12px;font-weight:normal;color:#64748b;">(${list.length.toLocaleString("fa-IR")} مورد یافت شد)</span></div>`;
+    const maxOffline = 60;
+
+    list.slice(0, maxOffline).forEach(item => {
+      const letterCount = countLetters(item.a || "");
+      const highlightedAns = highlightMatches(item.a || "", tokens);
+      const highlightedClue = highlightMatches(item.c || "", tokens);
+
+      html += `
+        <div class="card">
+          <div class="card-header">
+            <span class="ans">${highlightedAns}</span>
+            <span class="letters">${letterCount} حرفی</span>
+          </div>
+          <div class="clue">${highlightedClue || "بدون توضیح"}</div>
+          <span class="badge">${item.cat || "عمومی"}</span>
+        </div>
+      `;
+    });
+
+    return html;
+  }
+
+  function renderAllResults(offlineList, queryText, tokens) {
+    const container = document.getElementById("results");
+    const offlineHtml = renderOffline(offlineList, queryText, tokens);
+
+    const onlinePlaceholder = `
+      <div class="section-title" style="margin-top:25px;">
+        <span>استخراج هوشمند از دانشنامه (برخط)</span>
+      </div>
+      <div id="onlineStatus" class="online-status"><span class="loader"></span> در حال استخراج مشخصات و آثار...</div>
+      <div id="onlineResults"></div>
+    `;
+
+    container.innerHTML = offlineHtml + onlinePlaceholder;
+  }
+
+  // کلیدواژه‌های اصلی جعبه اطلاعات برای نویسندگان و جغرافیا
+  const INFOBOX_TARGET_KEYS = [
+    "پایتخت", "مرکز", "نویسنده", "کارگردان", "نویسندگان", "شاعر", 
+    "مبتکر", "مخترع", "سازنده", "واحد پول", "زبان رسمی", "محل تولد", 
+    "زادگاه", "ملیت", "بنیان‌گذار", "لقب", "نام‌های دیگر", "طول رود", 
+    "ارتفاع", "رشته‌کوه", "مساحت", "کشور", "استان", "دهانه", "سرچشمه"
+  ];
+
+  function cleanString(str) {
+    if (!str) return "";
+    return str
+      .replace(/\[.*?\]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function parseArticleContent(htmlContent) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, "text/html");
+    
+    let keyAttributes = [];
+    let works = [];
+    let geoFeatures = [];
+
+    // استخراج اینفوباکس
+    const infobox = doc.querySelector(".infobox");
+    if (infobox) {
+      const rows = infobox.querySelectorAll("tr");
+      rows.forEach(tr => {
+        const th = tr.querySelector("th");
+        const td = tr.querySelector("td");
+        if (th && td) {
+          const key = cleanString(th.innerText);
+          const val = cleanString(td.innerText);
+          if (key && val && val.length < 90) {
+            const isMatch = INFOBOX_TARGET_KEYS.some(target => key.includes(target));
+            if (isMatch) {
+              keyAttributes.push({ key, val });
+            }
+          }
+        }
+      });
+    }
+
+    // استخراج لیست‌ها (کتاب‌شناسی، شعر، جغرافیا، رودها و کوه‌ها)
+    const seenItems = new Set();
+    const headers = doc.querySelectorAll("h2, h3, h4");
+    headers.forEach(h => {
+      const hText = h.innerText;
+      const isWorksSection = /آثار|کتاب‌شناسی|کتابشناسی|رمان|داستان|نمایشنامه|فیلم‌نامه|شعر|نوشته‌ها|فیلم‌شناسی/i.test(hText);
+      const isGeoSection = /جغرافیا|رود|کوه|قله|جزیره|تقسیمات|شهرستان|بخش|دریا|دریاچه|خلیج|تنگه|کویر|بیابان/i.test(hText);
+
+      if (isWorksSection || isGeoSection) {
+        let sibling = h.parentElement?.nextElementSibling || h.nextElementSibling;
+        while (sibling && !["H2", "H3", "H4"].includes(sibling.tagName)) {
+          if (sibling.tagName === "UL" || sibling.tagName === "OL") {
+            sibling.querySelectorAll("li").forEach(li => {
+              let cleanItem = cleanString(li.innerText.split("–")[0].split("-")[0].split("،")[0]);
+              if (cleanItem && cleanItem.length > 1 && cleanItem.length < 50 && !seenItems.has(cleanItem)) {
+                seenItems.add(cleanItem);
+                if (isWorksSection) works.push(cleanItem);
+                else geoFeatures.push(cleanItem);
+              }
+            });
+          }
+          sibling = sibling.nextElementSibling;
+        }
+      }
+    });
+
+    return { keyAttributes, works, geoFeatures };
+  }
+
+  async function fetchOnlineDetails(query) {
+    try {
+      const searchTerms = tokenizeQuery(query).join(" ") || query;
+      const sUrl = `https://fa.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchTerms)}&srlimit=3&format=json&origin=*`;
+      const sRes = await fetch(sUrl);
+      const sData = await sRes.json();
+      const hits = sData?.query?.search || [];
+
+      if (!hits.length) return null;
+
+      const title = hits[0].title;
+      const pUrl = `https://fa.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(title)}&prop=text&format=json&origin=*`;
+      const eUrl = `https://fa.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(title)}&format=json&origin=*`;
+
+      const [pRes, eRes] = await Promise.all([fetch(pUrl), fetch(eUrl)]);
+      const pData = await pRes.json();
+      const eData = await eRes.json();
+
+      const html = pData?.parse?.text?.["*"] || "";
+      const parsed = parseArticleContent(html);
+
+      let summary = "";
+      const pages = eData?.query?.pages;
+      if (pages) {
+        const pageId = Object.keys(pages)[0];
+        if (pageId && pages[pageId].extract) {
+          summary = pages[pageId].extract.split("\n")[0];
+        }
+      }
+
+      return {
+        title,
+        summary,
+        ...parsed,
+        url: `https://fa.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`
+      };
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  }
+
+  async function fetchOnlineAndAppend(query, isPattern) {
+    const statusEl = document.getElementById("onlineStatus");
+    const onlineResults = document.getElementById("onlineResults");
+    if (!statusEl || !onlineResults) return;
+
+    if (isPattern) {
+      statusEl.innerText = "جستجوی الگویی درون‌بانکی انجام شد.";
+      onlineResults.innerHTML = "";
+      return;
+    }
+
+    if (!navigator.onLine) {
+      statusEl.innerText = "اتصال اینترنت برقرار نیست (جستجوی برخط غیرفعال است).";
+      return;
+    }
+
+    statusEl.innerHTML = `<span class="loader"></span> در حال بررسی مدخل‌های دانشنامه‌ای...`;
+
+    const res = await fetchOnlineDetails(query);
+
+    if (!res) {
+      statusEl.innerText = "مدخل دانشنامه‌ای متناسبی یافت نشد.";
+      return;
+    }
+
+    statusEl.innerText = `نتایج استخراج‌شده برای: «${res.title}»`;
+    let html = "";
+
+    // نمایش خلاصه
+    if (res.summary) {
+      html += `
+        <div class="card summary-card">
+          <div class="ans">چکیده دانشنامه:</div>
+          <div class="clue">${res.summary}</div>
+        </div>
+      `;
+    }
+
+    // جدول اطلاعات کلیدی (پایتخت، نویسنده، رود، ارتفاع و...)
+    if (res.keyAttributes && res.keyAttributes.length > 0) {
+      html += `
+        <div class="section-title">مشخصات کلیدی و ویژگی‌ها (${res.keyAttributes.length.toLocaleString("fa-IR")} مورد)</div>
+        <div class="table-container">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th style="width: 35%;">عنوان</th>
+                <th style="width: 45%;">پاسخ جدول</th>
+                <th style="width: 20%; text-align:center;">تعداد حروف</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      res.keyAttributes.forEach(item => {
+        const count = countLetters(item.val);
+        html += `
+          <tr>
+            <td><strong>${item.key}</strong></td>
+            <td><span style="color:#1d4ed8; font-weight:bold;">${item.val}</span></td>
+            <td style="text-align:center;"><span class="badge-count">${count}</span></td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table></div>`;
+    }
+
+    // جدول آثار ادبی و نویسندگان
+    if (res.works && res.works.length > 0) {
+      html += `
+        <div class="section-title">آثار و نگاشته‌ها (${res.works.length.toLocaleString("fa-IR")} مورد)</div>
+        <div class="table-container">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th style="width: 15%;">ردیف</th>
+                <th style="width: 65%;">نام اثر (کتاب، شعر، رمان، نمایشنامه)</th>
+                <th style="width: 20%; text-align:center;">تعداد حروف</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      res.works.forEach((work, index) => {
+        const count = countLetters(work);
+        html += `
+          <tr>
+            <td>${(index + 1).toLocaleString("fa-IR")}</td>
+            <td><strong>${work}</strong></td>
+            <td style="text-align:center;"><span class="badge-count">${count}</span></td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table></div>`;
+    }
+
+    // جدول عوارض طبیعی و جغرافیایی
+    if (res.geoFeatures && res.geoFeatures.length > 0) {
+      html += `
+        <div class="section-title">موقعیت‌ها و عوارض جغرافیایی (${res.geoFeatures.length.toLocaleString("fa-IR")} مورد)</div>
+        <div class="table-container">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th style="width: 15%;">ردیف</th>
+                <th style="width: 65%;">کوه، رود، شهر، تنگه، جزیره یا صحرا</th>
+                <th style="width: 20%; text-align:center;">تعداد حروف</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      res.geoFeatures.forEach((geo, index) => {
+        const count = countLetters(geo);
+        html += `
+          <tr>
+            <td>${(index + 1).toLocaleString("fa-IR")}</td>
+            <td><strong>${geo}</strong></td>
+            <td style="text-align:center;"><span class="badge-count">${count}</span></td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table></div>`;
+    }
+
+    html += `
+      <div style="text-align:left; margin-top:8px;">
+        <a href="${res.url}" target="_blank" style="font-size:12px; color:#2563eb; text-decoration:none;">مشاهده صفحه کامل در ویکی‌پدیا &larr;</a>
+      </div>
+    `;
+
+    onlineResults.innerHTML = html;
+  }
+</script>
+</body>
+</html>
