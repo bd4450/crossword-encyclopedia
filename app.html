@@ -198,3 +198,12 @@
     let html = `<div class="section-title">نتایج (${list.length.toLocaleString("fa-IR")} مورد)</div>`;
     list.slice(0, 50).forEach(item => {
       html += `<div class="card"><div class="card-header"><span class="ans">${highlightMatches(item.a, tokens)}</span>
+<div class="filters">
+    <button class="filter-chip active" onclick="setFilter('all', this)">همه موارد</button>
+    <button class="filter-chip" onclick="setFilter('ادبیات', this)">ادبیات و مفاخر</button>
+    <button class="filter-chip" onclick="setFilter('جغرافیا', this)">جغرافیا و کشورها</button>
+    <button class="filter-chip" onclick="setFilter('عمومی', this)">عمومی و جدول</button>
+    
+    <!-- قرار دادن دکمه جدید در انتها -->
+    <button class="filter-chip" onclick="setFilter('تاریخ', this)">تاریخ و تمدن</button>
+</div>
