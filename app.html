@@ -100,6 +100,23 @@
 
 <script>
   let currentCategory = 'all';
+  // --- توابع کمکی برای خواندن داده‌های جدول ---
+  function getRndQuestion() {
+    const data = getDataSource();
+    if (!data || data.length === 0) return null;
+    return data[Math.floor(Math.random() * data.length)];
+  }
+
+  function getByCategory(categoryName) {
+    const data = getDataSource();
+    return data.filter(item => item.cat === categoryName);
+  }
+
+  function getByDifficulty(length) {
+    const data = getDataSource();
+    return data.filter(item => countLetters(item.a) === length);
+  }
+  // ------------------------------------------
 
   function setFilter(cat, btn) {
     currentCategory = cat;
