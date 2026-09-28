@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>دانشیار - دانشنامه و حل جدول متقاطع</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --warning: #d97706;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: Tahoma, 'Vazirmatn', sans-serif; background-color: var(--bg); margin: 0; padding: 12px; color: var(--text); line-height: 1.5; }
+    .container { max-width: 680px; margin: 0 auto; background: var(--card-bg); padding: 18px; border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    h1 { text-align: center; font-size: 20px; margin: 0 0 12px 0; color: #0f172a; }
+    .status-badge { display: flex; align-items: center; justify-content: center; font-size: 13px; margin-bottom: 15px; padding: 6px 14px; border-radius: 20px; background-color: #fee2e2; color: #991b1b; transition: all .3s ease; }
+    .status-badge.ok { background-color: #dcfce7; color: var(--success); }
+    .status-dot { width: 9px; height: 9px; border-radius: 50%; background-color: currentColor; margin-left: 8px; }
+    .search-box { display: flex; gap: 8px; }
+    .input-wrapper { flex: 1; position: relative; display: flex; align-items: center; }
+    input { width: 100%; padding: 12px 36px 12px 12px; font-size: 15px; border: 2px solid var(--border); border-radius: 10px; outline: none; transition: border-color .2s; font-family: inherit; }
+    input:focus { border-color: var(--primary); }
+    .clear-btn { position: absolute; left: 10px; background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer; display: none; line-height: 1; }
+    .btn-search { padding: 0 20px; background-color: var(--primary); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; font-family: inherit; cursor: pointer; transition: background .2s; }
+    .btn-search:active { background-color: var(--primary-dark); }
+    .filters { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 4px 0; margin-bottom: 8px; }
+    .filter-chip { font-size: 12px; padding: 4px 10px; border-radius: 14px; background: #f1f5f9; color: var(--text-muted); border: 1px solid var(--border); cursor: pointer; white-space: nowrap; }
+    .filter-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .section-title { margin: 20px 0 10px; font-size: 15px; color: #0f172a; font-weight: bold; border-bottom: 2px solid var(--border); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .card { background: #f8fafc; border-right: 4px solid var(--primary); padding: 12px; margin-bottom: 8px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; }
+    .card .ans { font-size: 16px; font-weight: bold; color: #0f172a; }
+    .card .clue { font-size: 13.5px; color: #475569; margin-top: 5px; line-height: 1.6; }
+    .hint { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-top: 8px; }
+    .empty { text-align: center; color: var(--text-muted); padding: 18px; font-size: 13px; background: #f8fafc; border-radius: 8px; }
+    mark { background-color: #fde047; color: #854d0e; padding: 0 3px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>دانشیار - دانشنامه و حل جدول</h1>
+  <div id="statusBadge" class="status-badge">
+    <span class="status-dot"></span>
+    <span id="statusText">در حال ارزیابی بانک داده‌ها...</span>
+  </div>
+  <div class="search-box">
+    <div class="input-wrapper">
+      <input type="text" id="searchInput" placeholder="" autocomplete="off">
+      <button id="clearBtn" class="clear-btn" onclick="clearInput()">&times;</button>
+    </div>
+    <button class="btn-search" onclick="doSearch()">جستجو</button>
+  </div>
+  <div class="filters">
+    <button class="filter-chip active" onclick="setFilter('all', this)">همه موارد</button>
+    <button class="filter-chip" onclick="setFilter('ادبیات', this)">ادبیات و مفاخر</button>
+    <button class="filter-chip" onclick="setFilter('جغرافیا', this)">جغرافیا و کشورها</button>
+    <button class="filter-chip" onclick="setFilter('عمومی', this)">عمومی و جدول</button>
+    <button class="filter-chip" onclick="setFilter('تاریخ', this)">تاریخ و تمدن</button>
+  </div>
+  <div class="hint">نکته: برای جستجوی حروف جاافتاده از نقطه یا خط تیره استفاده کنید.</div>
+  <div id="results">
+    <div class="empty">برای یافتن واژه، عبارت را جستجو کنید.</div>
+  </div>
+</div>
+
+<script src="data1.js"></script>
+<script src="data_g.js"></script>
+<script src="data_h.js"></script>
+
+<script>
+  let currentCategory = 'all';
+
+  function setFilter(cat, btn) {
+    currentCategory = cat;
+    document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+    btn.classList.add('active');
+    const inputVal = document.getElementById("searchInput").value.trim();
+    if (inputVal) doSearch();
+  }
+
+  const BUILTIN_BACKUP_DATA = [
+    { a: "تهران", c: "پایتخت ایران", cat: "جغرافیا" },
+    { a: "فردوسی", c: "سراینده شاهنامه", cat: "ادبیات" }
+  ];
+
+  function getDataSource() {
+    const data1 = window.CROSSWORD_DATA || [];
+    const dataG = window.GEO_DATA || [];
+    const dataH = window.HISTORY_DATA || [];
+    return [...data1, ...dataG, ...dataH, ...BUILTIN_BACKUP_DATA];
+  }
+
+  function initApp() {
+    const badge = document.getElementById("statusBadge");
+    const statusText = document.getElementById("statusText");
+    const data = getDataSource();
+    if (data && data.length > 0) {
+      badge.classList.add("ok");
+      statusText.innerText = "بانک داده متصل است (" + data.length.toLocaleString("fa-IR") + " مدخل)";
+    }
+    document.getElementById("searchInput").addEventListener("keyup", (e) => { if (e.key === "Enter") doSearch(); });
+    document.getElementById("searchInput").addEventListener("input", function() { document.getElementById("clearBtn").style.display = this.value ? "block" : "none"; });
+  }
+
+  window.addEventListener("DOMContentLoaded", initApp);
+
+  function clearInput() {
+    const input = document.getElementById("searchInput");
+    input.value = "";
+    document.getElementById("clearBtn").style.display = "none";
+    input.focus();
+  }
+
+  function normalizeText(text) {
+    if (!text) return "";
+    return text.toString().replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/ي/g, "ی").replace(/ك/g, "ک").replace(/ة/g, "ه").replace(/[\u064B-\u065F]/g, "").replace(/[؟?!.،,:;'"“”‘’(){}\[\]]/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+  }
+
+  function tokenizeQuery(q) {
+    const norm = normalizeText(q);
+    if (!norm) return [];
+    const parts = norm.split(" ").filter(Boolean);
+    const STOP_WORDS = new Set(["چیست","چی","چیه","یعنی","تعریف","مفهوم","معنی","معنا","کجاست","کجا","کدام","کدوم","چه","است","بود","باشد","میباشد","را","به","از","در","برای","با","تا","و","یا","این","آن","یک","ها"]);
+    const tokens = parts.filter(w => w.length >= 2 && !STOP_WORDS.has(w));
+    return tokens.length ? tokens : parts;
+  }
+
+  function highlightMatches(text, tokens) {
+    if (!text || !tokens || tokens.length === 0) return text;
+    const regex = new RegExp(`(${tokens.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join("|")})`, "gi");
+    return text.replace(regex, "<mark>$1</mark>");
+  }
+
+  function evaluateItem(item, tokens, fullQueryNorm) {
+    const a = normalizeText(item.a);
+    const c = normalizeText(item.c);
+    if (currentCategory !== 'all' && !(item.cat || "عمومی").includes(currentCategory)) return 0;
+    let score = 0;
+    if (a === fullQueryNorm) score += 300;
+    else if (a.includes(fullQueryNorm)) score += 100;
+    tokens.forEach(t => { if (a.includes(t)) score += 45; if (c.includes(t)) score += 20; });
+    return score >= 30 ? score : 0;
+  }
+
+  function doSearch() {
+    const rawQuery = document.getElementById("searchInput").value.trim();
+    const resultsContainer = document.getElementById("results");
+    const data = getDataSource();
+    if (!rawQuery) { resultsContainer.innerHTML = '<div class="empty">عبارت را بنویسید.</div>'; return; }
+    const queryNorm = normalizeText(rawQuery);
+    const isPattern = /[._-]/.test(queryNorm);
+    if (isPattern) {
+      const regex = new RegExp("^" + queryNorm.replace(/[_.-]/g, ".") + "$");
+      const matched = data.filter(item => regex.test(normalizeText(item.a).replace(/\s+/g, "")));
+      renderAllResults(matched, rawQuery, []);
+      return;
+    }
+    const tokens = tokenizeQuery(rawQuery);
+    const scored = data.map(item => ({ item, score: evaluateItem(item, tokens, queryNorm) })).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
+    renderAllResults(scored.map(x => x.item), rawQuery, tokens);
+  }
+
+  function renderAllResults(list, queryText, tokens) {
+    const container = document.getElementById("results");
+    if (!list.length) { container.innerHTML = '<div class="empty">موردی یافت نشد.</div>'; return; }
+    let html = `<div class="section-title">نتایج (${list.length.toLocaleString("fa-IR")} مورد)</div>`;
+    list.slice(0, 50).forEach(item => {
+      html += `<div class="card"><div class="card-header"><span class="ans">${highlightMatches(item.a, tokens)}</span></div><div class="clue">${highlightMatches(item.c, tokens)}</div></div>`;
+    });
+    container.innerHTML = html;
+  }
+</script>
+</body>
+</html>
