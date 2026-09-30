@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>دانشیار</title>
+  <style>
+    :root{
+      --primary:#7c3aed;
+      --primary-light:#ede9fe;
+      --bg:#f8fafc;
+      --green:#16a34a;
+      --text:#0f172a;
+      --muted:#64748b;
+      --card:#ffffff;
+      --border:#e5e7eb;
+    }
+    body{ margin:0; padding:14px; font-family:Tahoma, sans-serif; background:var(--bg); color:var(--text); }
+    .container{ max-width:720px; margin:auto; background:var(--card); border-radius:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+    h1{ margin:0 0 10px; text-align:center; color:var(--primary); font-size:22px; }
+
+    .filters{ display:flex; gap:6px; overflow-x:auto; padding:10px 0; border-bottom:1px solid var(--border); -webkit-overflow-scrolling:touch; }
+    .chip{
+      padding:6px 14px; border-radius:999px; border:1px solid #d1d5db;
+      background:#fff; cursor:pointer; white-space:nowrap; font-size:14px;
+    }
+    .chip.active{ background:var(--primary); border-color:var(--primary); color:#fff; }
+
+    .row{ display:flex; gap:8px; margin:12px 0; }
+    input[type="text"]{
+      flex:1; padding:12px; border:1px solid #cbd5e1; border-radius:10px;
+      font-size:16px; box-sizing:border-box; outline:none;
+    }
+    input[type="number"]{
+      width:78px; padding:12px 6px; border:1px solid #cbd5e1; border-radius:10px;
+      font-size:15px; box-sizing:border-box; outline:none; text-align:center;
+    }
+    input:focus{ border-color:var(--primary); }
+
+    .search-btn{
+      padding:12px 16px; border:none; border-radius:10px; background:var(--green);
+      color:#fff; font-size:16px; cursor:pointer; font-weight:bold; white-space:nowrap;
+    }
+    .search-btn:active{ opacity:.85; }
+
+    .meta{ font-size:13px; color:var(--muted); margin-bottom:8px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .card{ padding:12px; margin-bottom:8px; border:1px solid var(--border); border-radius:8px; background:#fff; transition:0.2s; cursor:pointer; }
+    .card:active{ background:#f1f5f9; }
+    .ans-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+    .ans{ font-weight:bold; color:var(--primary); font-size:17px; }
+    .letter-badge{ font-size:12px; color:var(--muted); background:#f1f5f9; padding:2px 8px; border-radius:8px; }
+    .clue{ color:var(--text); font-size:14px; line-height:1.6; }
+    .tag{ color:var(--muted); font-size:12px; margin-top:6px; }
+    .hl{ background:var(--primary-light); color:var(--primary); font-weight:bold; padding:0 2px; border-radius:3px; }
+    .empty{ padding:18px 0; color:var(--muted); text-align:center; }
+    .toast{
+      position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+      background:#1e293b; color:#fff; padding:8px 16px; border-radius:20px;
+      font-size:13px; display:none; z-index:999;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>دانشیار</h1>
+
+    <div class="filters" id="filters">
+      <button class="chip active" data-filter="all">همه</button>
+      <button class="chip" data-filter="مشاهیر">مشاهیر</button>
+      <button class="chip" data-filter="اساطیر">اساطیر و ایزدان</button>
+      <button class="chip" data-filter="فلسفه">فلسفه</button>
+      <button class="chip" data-filter="ادبیات">ادبیات</button>
+      <button class="chip" data-filter="جغرافیا">جغرافیا</button>
+      <button class="chip" data-filter="تاریخ">تاریخ</button>
+      <button class="chip" data-filter="پزشکی">پزشکی</button>
+      <button class="chip" data-filter="هنر">هنر</button>
+      <button class="chip" data-filter="ورزش">ورزش</button>
+      <button class="chip" data-filter="گیاهان">گیاهان</button>
+      <button class="chip" data-filter="جانوران">جانوران</button>
+      <button class="chip" data-filter="دارویی">دارویی</button>
+      <button class="chip" data-filter="غذا">غذا</button>
+      <button class="chip" data-filter="نوبل">نوبل</button>
+    </div>
+
+    <div class="row">
+      <input id="searchInput" type="text" placeholder="جستجو (مثلاً: کوروش، ماندلا، س.ر...)" autocomplete="off" />
+      <input id="lenInput" type="number" placeholder="حروف" min="1" max="30" title="فیلتر تعداد حروف کلمه" />
+      <button class="search-btn" id="searchBtn">جستجو</button>
+    </div>
+
+    <div class="meta">
+      <div>تعداد کل داده‌ها: <span id="totalCount">0</span></div>
+      <div>نتایج یافت‌شده: <span id="resultCount">0</span></div>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+  <div id="toast" class="toast">پاسخ کپی شد!</div>
+
+  <!-- ===== فایل‌های داده ===== -->
+  <script src="data1.js"></script>
+  <script src="data_fi.js"></script>
+  <script src="data_sp.js"></script>
+  <script src="data_pa.js"></script>
+  <script src="data_mp.js"></script>
+  <script src="data_f.js"></script>
+  <script src="data_nobel.js"></script>
+
+  <script>
+    // --------- یکپارچه‌سازی و ایمن‌سازی دیتاها ----------
+    window.CROSSWORD_DATA = Array.isArray(window.CROSSWORD_DATA) ? window.CROSSWORD_DATA : [];
+
+    // اضافه کردن داده‌های مشاهیر در صورت وجود
+    if (typeof figuresData !== "undefined" && Array.isArray(figuresData)) {
+      figuresData.forEach(item => {
+        const details = [];
+        if (item.role) details.push(item.role);
+        if (item.nationality) details.push(`ملیت: ${item.nationality}`);
+        if (item.era) details.push(`دوره: ${item.era}`);
+        if (item.works && item.works.length) details.push(`آثار/ویژگی‌ها: ${item.works.join("، ")}`);
+        if (item.keywords && item.keywords.length) details.push(`کلیدواژه‌ها: ${item.keywords.join("، ")}`);
+
+        window.CROSSWORD_DATA.push({
+          a: item.name,
+          c: details.join(" | "),
+          cat: item.category || "مشاهیر"
+        });
+      });
+    }
+
+    // اضافه کردن داده‌های نوبل
+    if (Array.isArray(window.NOBEL_DATA)) {
+      window.CROSSWORD_DATA.push(...window.NOBEL_DATA);
+    }
+
+    const state = { filter: "all" };
+    const $ = (id) => document.getElementById(id);
+
+    // تابع نرمال‌سازی فوق‌پیشرفته حروف و رسم‌الخط
+    function norm(s){
+      return (s || "")
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/ي/g,"ی")
+        .replace(/ك/g,"ک")
+        .replace(/[آأإ]/g,"ا")
+        .replace(/ة/g,"ه")
+        .replace(/ؤ/g,"و")
+        .replace(/ئ/g,"ی")
+        .replace(/[\u200c\u200b\u200e\u200f]/g, "") // حذف انواع نیم‌فاصله
+        .replace(/[\u064B-\u065F]/g, ""); // حذف تنوین و اعراب
+    }
+
+    // محاسبه طول کلمه بدون فاصله‌ها
+    function getWordLength(str){
+      return (str || "").toString().replace(/[\s\u200c]+/g, "").length;
+    }
+
+    function matchesFilter(item, filter){
+      if(filter === "all") return true;
+      const cat = norm(item.cat);
+      const clue = norm(item.c);
+      const f = norm(filter);
+      return cat.includes(f) || clue.includes(f);
+    }
+
+    function matchesLength(item, targetLen){
+      if(!targetLen || isNaN(targetLen) || targetLen <= 0) return true;
+      return getWordLength(item.a) === targetLen;
+    }
+
+    // بررسی تطابق هوشمند (چندکلمه‌ای و الگوی جدولی نقطه‌ای)
+    function evaluateMatch(item, rawQuery){
+      if (!rawQuery) return { matched: true, score: 0 };
+
+      const cleanQ = norm(rawQuery);
+      const cleanA = norm(item.a);
+      const cleanC = norm(item.c);
+      const cleanCat = norm(item.cat);
+
+      // حالت ۱: جستجوی الگوی جدول (اگر شامل . یا ؟ یا * بود)
+      if (/[\.\?\*]/.test(rawQuery)) {
+        const patternStr = "^" + cleanQ.replace(/[\.\?\*]/g, "[\\w\\u0600-\\u06FF]") + "$";
+        try {
+          const reg = new RegExp(patternStr);
+          const compactA = cleanA.replace(/\s+/g, "");
+          if (reg.test(compactA)) {
+            return { matched: true, score: 100 };
+          }
+        } catch(e){}
+      }
+
+      // حالت ۲: تطابق چندکلمه‌ای (AND)
+      const words = cleanQ.split(/\s+/).filter(w => w.length > 0);
+      let score = 0;
+      let allFound = true;
+
+      for (const w of words) {
+        let wordFound = false;
+        if (cleanA.includes(w)) {
+          wordFound = true;
+          score += 20; // امتیاز بالاتر برای تطابق با خود پاسخ
+          if (cleanA === w) score += 30; // امتیاز بیشینه برای تطابق کامل پاسخ
+        }
+        if (cleanC.includes(w)) {
+          wordFound = true;
+          score += 5;
+        }
+        if (cleanCat.includes(w)) {
+          wordFound = true;
+          score += 2;
+        }
+
+        if (!wordFound) {
+          allFound = false;
+          break;
+        }
+      }
+
+      return { matched: allFound, score: score };
+    }
+
+    // هایلایت کردن کلمات در خروجی
+    function highlight(text, q) {
+      if (!q || !text) return text || "";
+      const words = norm(q).split(/\s+/).filter(w => w.length > 1 && !/[\.\?\*]/.test(w));
+      if (!words.length) return text;
+      
+      let res = text.toString();
+      words.forEach(w => {
+        const reg = new RegExp(`(${w})`, "gi");
+        res = res.replace(reg, '<span class="hl">$1</span>');
+      });
+      return res;
+    }
+
+    function showToast(msg) {
+      const t = $("toast");
+      t.textContent = msg;
+      t.style.display = "block";
+      setTimeout(() => { t.style.display = "none"; }, 1800);
+    }
+
+    function render(list, q){
+      $("resultCount").textContent = list.length;
+      const root = $("results");
+      
+      if(list.length === 0){
+        root.innerHTML = `<div class="empty">نتیجه‌ای پیدا نشد.</div>`;
+        return;
+      }
+
+      root.innerHTML = list.slice(0, 150).map(item => {
+        const len = getWordLength(item.a);
+        const ansHl = highlight(item.a, q);
+        const clueHl = highlight(item.c, q);
+        return `
+          <div class="card" onclick="navigator.clipboard && navigator.clipboard.writeText('${(item.a || "").replace(/'/g, "\\'")}').then(()=>showToast('کپی شد: ${item.a}'))">
+            <div class="ans-row">
+              <span class="ans">${ansHl}</span>
+              <span class="letter-badge">${len} حرفی</span>
+            </div>
+            <div class="clue">${clueHl}</div>
+            ${item.cat ? `<div class="tag">#${item.cat}</div>` : ``}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function doSearch(){
+      const rawQ = $("searchInput").value.trim();
+      const targetLen = parseInt($("lenInput").value, 10);
+      const data = window.CROSSWORD_DATA;
+
+      $("totalCount").textContent = data.length;
+
+      const scoredResults = [];
+
+      for (let i = 0; i < data.length; i++) {
+        const it = data[i];
+        if (!it || typeof it !== "object") continue;
+
+        if (!matchesFilter(it, state.filter)) continue;
+        if (!matchesLength(it, targetLen)) continue;
+
+        const evalRes = evaluateMatch(it, rawQ);
+        if (evalRes.matched) {
+          scoredResults.push({ item: it, score: evalRes.score });
+        }
+      }
+
+      // مرتب‌سازی بر اساس ارتباط و امتیاز (نتایج مرتبط‌تر در بالا)
+      scoredResults.sort((a, b) => b.score - a.score);
+      const finalResults = scoredResults.map(r => r.item);
+
+      render(finalResults, rawQ);
+    }
+
+    // قابلیت تایپ روان (Debounce) برای جلوگیری از لگ روی گوشی
+    let searchTimeout = null;
+    function debouncedSearch(){
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(doSearch, 150);
+    }
+
+    // --------- رویدادها ----------
+    $("searchBtn").addEventListener("click", doSearch);
+    $("searchInput").addEventListener("input", debouncedSearch);
+    $("lenInput").addEventListener("input", debouncedSearch);
+    $("searchInput").addEventListener("keydown", (e)=>{ if(e.key === "Enter") doSearch(); });
+
+    $("filters").addEventListener("click", (e)=>{
+      const btn = e.target.closest("button[data-filter]");
+      if(!btn) return;
+      state.filter = btn.dataset.filter;
+
+      document.querySelectorAll(".chip").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      doSearch();
+    });
+
+    // --------- اجرای اولیه ----------
+    window.addEventListener("DOMContentLoaded", doSearch);
+  </script>
+</body>
+</html>
