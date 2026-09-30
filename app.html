@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>دانشیار - حل جدول کلمات</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --border: #334155;
+      --highlight: #f59e0b;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .search-card {
+      background-color: var(--card-bg);
+      padding: 1.5rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .pattern-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      background: #0b1120;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      font-size: 1.1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .filters {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-item {
+      flex: 1;
+      min-width: 150px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    select {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border-radius: 8px;
+      background: #0b1120;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      font-size: 0.95rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    select:focus {
+      border-color: var(--accent);
+    }
+
+    .stats {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 0.5rem;
+    }
+
+    .results-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .result-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: transform 0.1s, border-color 0.1s;
+    }
+
+    .result-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .word-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .word-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .word-len {
+      font-size: 0.75rem;
+      background: #0b1120;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .word-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px dashed var(--border);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>دانشیار</h1>
+      <p class="subtitle">یافتن واژه‌ها و پاسخ‌های معما بر اساس الگو و تعداد حروف</p>
+    </header>
+
+    <div class="search-card">
+      <div class="input-group">
+        <label for="patternInput">الگوی کلمه (از نقطه . یا فاصله برای حروف نامشخص استفاده کنید):</label>
+        <div class="pattern-wrapper">
+          <input 
+            type="text" 
+            id="patternInput" 
+            placeholder="مثال: س..ور (۵ حرف) یا ر..مان" 
+            autocomplete="off" 
+            spellcheck="false"
+          />
+        </div>
+        <div class="hint">حروف مشخص را بنویسید و به جای خانه‌های خالی نقطه یا فاصله بگذارید.</div>
+      </div>
+
+      <div class="filters">
+        <div class="filter-item">
+          <label for="lengthSelect">طول کلمه:</label>
+          <select id="lengthSelect">
+            <option value="any">هر طولی</option>
+            <option value="2">۲ حرفی</option>
+            <option value="3">۳ حرفی</option>
+            <option value="4">۴ حرفی</option>
+            <option value="5">۵ حرفی</option>
+            <option value="6">۶ حرفی</option>
+            <option value="7">۷ حرفی</option>
+            <option value="8">۸ حرفی</option>
+            <option value="9">۹+ حرفی</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label for="categorySelect">دسته‌بندی (اختیاری):</label>
+          <select id="categorySelect">
+            <option value="all">همه دسته‌ها</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="stats">
+        <span id="matchCount">در حال آماده‌سازی داده‌ها...</span>
+        <span id="loadStatus" class="badge">بارگذاری دیتابیس</span>
+      </div>
+    </div>
+
+    <div class="results-container" id="resultsContainer">
+      <!-- نتایج جستجو در اینجا نمایش داده می‌شوند -->
+    </div>
+  </div>
+
+  <script src="data1.js"></script>
+  <script>
+    // Standard Persian Normalization
+    function norm(text) {
+      if (!text) return "";
+      return String(text)
+        .replace(/[\u200B-\u200D\uFEFF]/g, "") // نیم‌فاصله و کاراکترهای مخفی
+        .replace(/[يی]/g, "ی")
+        .replace(/[كک]/g, "ک")
+        .replace(/[آاإأ]/g, "ا")
+        .replace(/[ة]/g, "ه")
+        .replace(/[\u064B-\u065F]/g, "") // اعراب
+        .trim();
+    }
+
+    let database = [];
+
+    // Fallback minimal mock dataset
+    const mockData = [
+      { w: "سنتور", d: "از سازهای زهی موسیقی سنتی ایران", c: "موسیقی" },
+      { w: "سنتور", d: "جعبه‌ای صوتی به شکل ذوزنقه با سیم‌های فراوان", c: "ساز" },
+      { w: "تنبور", d: "ساز زهی با دسته بلند و کاسه گلابی‌شکل", c: "موسیقی" },
+      { w: "سه تار", d: "از سازهای زهی مضرابی ایران", c: "موسیقی" },
+      { w: "رستم", d: "بزرگ‌ترین پهلوان شاهنامه فردوسی", c: "ادبیات" },
+      { w: "سهراب", d: "فرزند رستم و تهمینه", c: "ادبیات" },
+      { w: "افلاطون", d: "فیلسوف نامدار یونان باستان", c: "فلسفه" },
+      { w: "سقراط", d: "فیلسوف بزرگ یونانی و آموزگار افلاطون", c: "فلسفه" },
+      { w: "ارسطو", d: "فیلسوف برجسته و شاگرد افلاطون", c: "فلسفه" },
+      { w: "دماوند", d: "بلندترین کوه ایران و آتشفشان نیمه‌فعال", c: "جغرافیا" },
+      { w: "سهند", d: "از کوه‌های مهم استان آذربایجان شرقی", c: "جغرافیا" },
+      { w: "زاگرس", d: "رشته‌کوهی پهناور در غرب و جنوب ایران", c: "جغرافیا" }
+    ];
+
+    // Data init
+    function initDatabase() {
+      if (typeof window.wordsData !== 'undefined' && Array.isArray(window.wordsData)) {
+        database = window.wordsData;
+        document.getElementById('loadStatus').textContent = `بانک جامع (${database.length.toLocaleString('fa-IR')} لغت)`;
+      } else {
+        database = mockData;
+        document.getElementById('loadStatus').textContent = `حالت سبک (${database.length} لغت نمونه)`;
+      }
+      populateCategories();
+      executeSearch();
+    }
+
+    function populateCategories() {
+      const catSelect = document.getElementById('categorySelect');
+      const cats = new Set();
+      database.forEach(item => {
+        if (item.c) cats.add(item.c);
+      });
+
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        catSelect.appendChild(opt);
+      });
+    }
+
+    function compilePatternRegex(rawPattern) {
+      if (!rawPattern) return null;
+      let clean = norm(rawPattern).replace(/\s+/g, '.');
+      let regexStr = "^";
+      for (let char of clean) {
+        if (char === '.') {
+          regexStr += "[\\u0600-\\u06FFa-zA-Z]";
+        } else {
+          regexStr += char;
+        }
+      }
+      regexStr += "$";
+      return new RegExp(regexStr);
+    }
+
+    function executeSearch() {
+      const patternVal = document.getElementById('patternInput').value.trim();
+      const lengthVal = document.getElementById('lengthSelect').value;
+      const catVal = document.getElementById('categorySelect').value;
+
+      const normPattern = norm(patternVal);
+      const isPatternFilled = normPattern.length > 0;
+      const patternRegex = isPatternFilled ? compilePatternRegex(patternVal) : null;
+      const targetLength = isPatternFilled ? normPattern.length : (lengthVal !== 'any' ? parseInt(lengthVal, 10) : null);
+
+      const matches = database.filter(item => {
+        const cleanWord = norm(item.w);
+
+        // Length Check
+        if (lengthVal !== 'any') {
+          const l = parseInt(lengthVal, 10);
+          if (l === 9 && cleanWord.length < 9) return false;
+          if (l !== 9 && cleanWord.length !== l) return false;
+        } else if (isPatternFilled && cleanWord.length !== targetLength) {
+          return false;
+        }
+
+        // Category Check
+        if (catVal !== 'all' && item.c !== catVal) {
+          return false;
+        }
+
+        // Pattern Check
+        if (patternRegex && !patternRegex.test(cleanWord)) {
+          return false;
+        }
+
+        return true;
+      });
+
+      renderResults(matches);
+    }
+
+    function renderResults(results) {
+      const container = document.getElementById('resultsContainer');
+      const counter = document.getElementById('matchCount');
+      container.innerHTML = '';
+
+      counter.textContent = `${results.length.toLocaleString('fa-IR')} مورد یافت شد`;
+
+      if (results.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <p>هیچ پاسخی مطابق با الگوی جستجوی شما پیدا نشد.</p>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem;">نکته: تعداد حروف یا جای خالی را مجدداً بررسی نمایید.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const limit = Math.min(results.length, 100);
+      const frag = document.createDocumentFragment();
+
+      for (let i = 0; i < limit; i++) {
+        const item = results[i];
+        const card = document.createElement('div');
+        card.className = 'result-card';
+
+        card.innerHTML = `
+          <div class="word-info">
+            <div class="word-title">
+              <span>${item.w}</span>
+              <span class="word-len">${norm(item.w).length} حرف</span>
+            </div>
+            <div class="word-desc">${item.d || 'توضیحی ثبت نشده است.'}</div>
+          </div>
+          ${item.c ? `<span class="badge">${item.c}</span>` : ''}
+        `;
+        frag.appendChild(card);
+      }
+
+      container.appendChild(frag);
+
+      if (results.length > 100) {
+        const moreInfo = document.createElement('div');
+        moreInfo.style.textAlign = 'center';
+        moreInfo.style.color = 'var(--text-muted)';
+        moreInfo.style.fontSize = '0.85rem';
+        moreInfo.style.padding = '1rem';
+        moreInfo.textContent = `نمایش ۱۰۰ مورد نخست از ${results.length.toLocaleString('fa-IR')} نتیجه. لطفاً الگو را دقیق‌تر وارد کنید.`;
+        container.appendChild(moreInfo);
+      }
+    }
+
+    // Attach Listeners
+    document.getElementById('patternInput').addEventListener('input', executeSearch);
+    document.getElementById('lengthSelect').addEventListener('change', executeSearch);
+    document.getElementById('categorySelect').addEventListener('change', executeSearch);
+
+    // Initial run
+    window.addEventListener('DOMContentLoaded', initDatabase);
+  </script>
+</body>
+</html>
