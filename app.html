@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>دانشیار</title>
+  <style>
+    :root{
+      --primary:#6366f1;
+      --primary-hover:#4f46e5;
+      --primary-light:#eef2ff;
+      --bg:#f8fafc;
+      --text:#0f172a;
+      --muted:#64748b;
+      --card:#ffffff;
+      --border:#e2e8f0;
+      --wiki:#0284c7;
+      --wiki-light:#e0f2fe;
+    }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    body{ margin:0; padding:12px; font-family:Tahoma, 'Segoe UI', sans-serif; background:var(--bg); color:var(--text); }
+    .container{ max-width:680px; margin:auto; background:var(--card); border-radius:16px; padding:16px; box-shadow:0 4px 16px rgba(0,0,0,.06); }
+    h1{ margin:0 0 12px; text-align:center; color:var(--primary); font-size:22px; font-weight:bold; }
+
+    /* ردیف اول تب‌ها (موضوعی) */
+    .filters{
+      display:flex; gap:6px; overflow-x:auto; padding:6px 2px 10px;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .filters::-webkit-scrollbar{ display:none; }
+    .chip{
+      padding:7px 14px; border-radius:999px; border:1px solid #cbd5e1;
+      background:#fff; cursor:pointer; white-space:nowrap; font-size:13.5px;
+      color:var(--text); transition:all .2s ease;
+    }
+    .chip.active{ background:var(--primary); border-color:var(--primary); color:#fff; font-weight:bold; }
+
+    /* ردیف دوم تب (ردیف اختصاصی ویکی‌پدیا) */
+    .wiki-bar-row{
+      display:flex; justify-content:center; padding:6px 0 10px;
+      border-bottom:1px solid var(--border);
+    }
+    .wiki-standalone-chip{
+      display:flex; align-items:center; justify-content:center; gap:6px;
+      width:100%; max-width:240px; padding:7px 16px; border-radius:999px;
+      border:1.5px solid var(--wiki); background:#fff; color:var(--wiki);
+      font-size:13.5px; font-weight:bold; cursor:pointer; transition:all .2s ease;
+    }
+    .wiki-standalone-chip.active{
+      background:var(--wiki); color:#fff; box-shadow:0 2px 8px rgba(2,132,199,.25);
+    }
+
+    /* کادر ورودی و تعداد حروف */
+    .inputs-row{ display:flex; gap:8px; margin-top:14px; }
+    .search-wrap{ position:relative; flex:1; }
+    input[type="text"]{
+      width:100%; padding:11px 36px 11px 12px; border:1px solid #cbd5e1;
+      border-radius:10px; font-size:15px; outline:none; transition:border-color .2s;
+      background:#fff;
+    }
+    input[type="text"]:focus{ border-color:var(--primary); box-shadow:0 0 0 2px var(--primary-light); }
+    
+    /* علامت ضربدر داخل کادر جستجو */
+    .clear-btn{
+      position:absolute; left:10px; top:50%; transform:translateY(-50%);
+      background:none; border:none; font-size:18px; color:#94a3b8;
+      cursor:pointer; display:none; padding:4px; line-height:1;
+    }
+    .clear-btn:hover{ color:#475569; }
+
+    input[type="number"]{
+      width:80px; padding:11px 4px; border:1px solid #cbd5e1; border-radius:10px;
+      font-size:14.5px; outline:none; text-align:center; transition:border-color .2s;
+    }
+    input[type="number"]:focus{ border-color:var(--primary); box-shadow:0 0 0 2px var(--primary-light); }
+
+    /* دکمه جستجو زیر کادر ورودی */
+    .search-btn{
+      width:100%; margin-top:10px; margin-bottom:12px; padding:12px;
+      border:none; border-radius:10px; background:linear-gradient(135deg, #4f46e5, #6366f1);
+      color:#fff; font-size:15.5px; cursor:pointer; font-weight:bold;
+      box-shadow:0 2px 6px rgba(99,102,241,.3); transition:opacity .15s, transform .1s;
+    }
+    .search-btn:active{ transform:scale(0.99); opacity:0.9; }
+
+    .meta{ font-size:12.5px; color:var(--muted); margin-bottom:10px; display:flex; justify-content:space-between; }
+    
+    /* کارت‌های خروجی */
+    .card{
+      padding:12px 14px; margin-bottom:9px; border:1px solid var(--border);
+      border-radius:10px; background:#fff; transition:border-color .2s;
+    }
+    .card:active{ background:#f8fafc; }
+    .ans-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+    .ans-left{ display:flex; align-items:center; gap:8px; }
+    .ans{ font-weight:bold; color:var(--primary); font-size:16.5px; }
+    
+    .wiki-icon-btn{
+      display:inline-flex; align-items:center; gap:3px; background:var(--wiki-light);
+      color:var(--wiki); border:none; padding:3px 8px; border-radius:6px;
+      font-size:11.5px; font-weight:bold; text-decoration:none; cursor:pointer;
+    }
+    .wiki-icon-btn:hover{ background:#bae6fd; }
+
+    .letter-badge{ font-size:11.5px; color:var(--muted); background:#f1f5f9; padding:2px 8px; border-radius:6px; }
+    .clue{ color:var(--text); font-size:13.5px; line-height:1.6; }
+    .tag{ color:var(--muted); font-size:11.5px; margin-top:6px; }
+    .hl{ background:var(--primary-light); color:var(--primary); font-weight:bold; padding:0 2px; border-radius:3px; }
+    .empty{ padding:24px 0; color:var(--muted); text-align:center; font-size:14px; }
+
+    .toast{
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+      background:#1e293b; color:#fff; padding:9px 18px; border-radius:25px;
+      font-size:13px; display:none; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>دانشیار</h1>
+
+    <!-- ردیف اول: تب‌های موضوعی -->
+    <div class="filters" id="filters">
+      <button class="chip active" data-filter="all">همه</button>
+      <button class="chip" data-filter="مشاهیر">مشاهیر</button>
+      <button class="chip" data-filter="اساطیر">اساطیر و ایزدان</button>
+      <button class="chip" data-filter="فلسفه">فلسفه</button>
+      <button class="chip" data-filter="ادبیات">ادبیات</button>
+      <button class="chip" data-filter="جغرافیا">جغرافیا</button>
+      <button class="chip" data-filter="تاریخ">تاریخ</button>
+      <button class="chip" data-filter="پزشکی">پزشکی و دارویی</button>
+      <button class="chip" data-filter="هنر">هنر</button>
+      <button class="chip" data-filter="ورزش">ورزش</button>
+      <button class="chip" data-filter="گیاهان">گیاهان</button>
+      <button class="chip" data-filter="جانوران">جانوران</button>
+      <button class="chip" data-filter="غذا">غذا</button>
+      <button class="chip" data-filter="نوبل">نوبل</button>
+    </div>
+
+    <!-- ردیف دوم: تب اختصاصی دانشنامه ویکی‌پدیا -->
+    <div class="wiki-bar-row">
+      <button class="wiki-standalone-chip" id="wikiTabBtn" data-filter="wikipedia">
+        🌐 دانشنامه ویکی‌پدیا
+      </button>
+    </div>
+
+    <!-- ردیف ورودی متن و فیلتر حروف -->
+    <div class="inputs-row">
+      <div class="search-wrap">
+        <input id="searchInput" type="text" placeholder="جستجو (واژه، الگو مثل ک..وش، یا مفهوم)..." autocomplete="off" />
+        <button id="clearBtn" class="clear-btn" title="خالی کردن">✕</button>
+      </div>
+      <input id="lenInput" type="number" placeholder="حروف" min="1" max="30" title="فیلتر تعداد حروف کلمه" />
+    </div>
+
+    <!-- دکمه استاندارد جستجو زیر کادر -->
+    <button class="search-btn" id="searchBtn">جستجو</button>
+
+    <div class="meta">
+      <div>کل بانک داده: <span id="totalCount">0</span></div>
+      <div>یافت‌شده: <span id="resultCount">0</span></div>
+    </div>
+
+    <!-- نتایج -->
+    <div id="results"></div>
+  </div>
+
+  <div id="toast" class="toast">پاسخ کپی شد!</div>
+
+  <!-- بارگذاری فایل‌های بانک داده -->
+  <script src="data1.js"></script>
+  <script src="geo_data.js"></script>
+  <script src="data_fi.js"></script>
+  <script src="data_sp.js"></script>
+  <script src="data_pa.js"></script>
+  <script src="data_mp.js"></script>
+  <script src="data_f.js"></script>
+  <script src="data_nobel.js"></script>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const state = { filter: "all" };
+
+    let MASTER_DATA = [];
+
+    function initData() {
+      MASTER_DATA = [];
+
+      if (Array.isArray(window.CROSSWORD_DATA)) MASTER_DATA.push(...window.CROSSWORD_DATA);
+      if (Array.isArray(window.GEO_DATA)) MASTER_DATA.push(...window.GEO_DATA);
+      if (Array.isArray(window.NOBEL_DATA)) MASTER_DATA.push(...window.NOBEL_DATA);
+      if (Array.isArray(window.SPORTS_DATA)) MASTER_DATA.push(...window.SPORTS_DATA);
+
+      if (typeof figuresData !== "undefined" && Array.isArray(figuresData)) {
+        figuresData.forEach(item => {
+          const details = [];
+          if (item.role) details.push(item.role);
+          if (item.nationality) details.push(`ملیت: ${item.nationality}`);
+          if (item.era) details.push(`دوره: ${item.era}`);
+          if (item.works && item.works.length) details.push(`آثار: ${item.works.join("، ")}`);
+          MASTER_DATA.push({
+            a: item.name,
+            c: details.join(" | "),
+            cat: item.category || "مشاهیر"
+          });
+        });
+      }
+      $("totalCount").textContent = MASTER_DATA.length;
+    }
+
+    function norm(s){
+      return (s || "")
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/ي/g,"ی")
+        .replace(/ك/g,"ک")
+        .replace(/[آأإ]/g,"ا")
+        .replace(/ة/g,"ه")
+        .replace(/ؤ/g,"و")
+        .replace(/ئ/g,"ی")
+        .replace(/[\u200c\u200b\u200e\u200f]/g, "")
+        .replace(/[\u064B-\u065F]/g, "");
+    }
+
+    function getWordLength(str){
+      return (str || "").toString().replace(/[\s\u200c]+/g, "").length;
+    }
+
+    function matchesFilter(item, filter){
+      if(filter === "all" || filter === "wikipedia") return true;
+      const cat = norm(item.cat);
+      const clue = norm(item.c);
+      const f = norm(filter);
+
+      if (f === "پزشکی" && (cat.includes("دارو") || clue.includes("دارو"))) return true;
+      if (f === "ادبیات" && (cat.includes("شعر") || cat.includes("شاعر") || clue.includes("شاعر"))) return true;
+      if (f === "ورزش" && (cat.includes("فوتبال") || clue.includes("ورزش"))) return true;
+
+      return cat.includes(f) || clue.includes(f);
+    }
+
+    function matchesLength(item, targetLen){
+      if(!targetLen || isNaN(targetLen) || targetLen <= 0) return true;
+      return getWordLength(item.a) === targetLen;
+    }
+
+    function evaluateMatch(item, rawQuery){
+      if (!rawQuery) return { matched: true, score: 0 };
+
+      const cleanQ = norm(rawQuery);
+      const cleanA = norm(item.a);
+      const cleanC = norm(item.c);
+      const cleanCat = norm(item.cat);
+
+      if (/[\.\?\*]/.test(rawQuery)) {
+        const patternStr = "^" + cleanQ.replace(/[\.\?\*]/g, "[\\w\\u0600-\\u06FF]") + "$";
+        try {
+          const reg = new RegExp(patternStr);
+          if (reg.test(cleanA.replace(/\s+/g, ""))) return { matched: true, score: 100 };
+        } catch(e){}
+      }
+
+      const words = cleanQ.split(/\s+/).filter(w => w.length > 0);
+      let score = 0;
+      let allFound = true;
+
+      for (const w of words) {
+        let found = false;
+        if (cleanA.includes(w)) {
+          found = true;
+          score += (cleanA === w) ? 40 : 20;
+        }
+        if (cleanC.includes(w)) {
+          found = true;
+          score += 10;
+        }
+        if (cleanCat.includes(w)) {
+          found = true;
+          score += 3;
+        }
+        if (!found) { allFound = false; break; }
+      }
+      return { matched: allFound, score };
+    }
+
+    function highlight(text, q) {
+      if (!q || !text) return text || "";
+      const words = norm(q).split(/\s+/).filter(w => w.length > 1 && !/[\.\?\*]/.test(w));
+      if (!words.length) return text;
+      let res = text.toString();
+      words.forEach(w => {
+        const reg = new RegExp(`(${w})`, "gi");
+        res = res.replace(reg, '<span class="hl">$1</span>');
+      });
+      return res;
+    }
+
+    function showToast(msg) {
+      const t = $("toast");
+      t.textContent = msg;
+      t.style.display = "block";
+      setTimeout(() => { t.style.display = "none"; }, 1800);
+    }
+
+    window.openWiki = function(term, event) {
+      if(event) event.stopPropagation();
+      const clean = term.replace(/["'«»]/g, "").trim();
+      const url = `https://fa.wikipedia.org/wiki/${encodeURIComponent(clean)}`;
+      window.open(url, '_blank');
+    };
+
+    window.copyWord = function(word) {
+      if(navigator.clipboard) {
+        navigator.clipboard.writeText(word).then(() => showToast(`کپی شد: ${word}`));
+      } else {
+        showToast(`پاسخ: ${word}`);
+      }
+    };
+
+    async function searchWikipediaLive(query) {
+      const root = $("results");
+      if (!query) {
+        root.innerHTML = `<div class="empty">لطفاً برای جستجو در دانشنامه، عبارتی در کادر بالا بنویسید.</div>`;
+        $("resultCount").textContent = 0;
+        return;
+      }
+      root.innerHTML = `<div class="empty">در حال جستجو در دانشنامه ویکی‌پدیا...</div>`;
+      
+      try {
+        const res = await fetch(`https://fa.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json&origin=*`);
+        const data = await res.json();
+        const items = data.query ? data.query.search : [];
+        $("resultCount").textContent = items.length;
+
+        if (!items.length) {
+          root.innerHTML = `<div class="empty">مقاله‌ای با این عنوان در دانشنامه پیدا نشد. <br><br>
+            <a href="https://fa.wikipedia.org/w/index.php?search=${encodeURIComponent(query)}" target="_blank" style="color:var(--wiki); font-weight:bold;">جستجوی مستقیم همین واژه در ویکی‌پدیا</a></div>`;
+          return;
+        }
+
+        root.innerHTML = items.map(it => `
+          <div class="card" onclick="openWiki('${it.title}')">
+            <div class="ans-row">
+              <span class="ans" style="color:var(--wiki);">${it.title}</span>
+              <button class="wiki-icon-btn" onclick="openWiki('${it.title}', event)">📖 باز کردن مقاله</button>
+            </div>
+            <div class="clue">${it.snippet.replace(/<span class="searchmatch">/g, '<span class="hl">').replace(/<\/span>/g, '</span>')}...</div>
+          </div>
+        `).join("");
+      } catch (e) {
+        root.innerHTML = `<div class="empty">خطا در اتصال به اینترنت برای دریافت از ویکی‌پدیا. <br><br>
+          <button class="search-btn" style="width:auto; padding:8px 16px;" onclick="openWiki('${query}')">مشاهده در وبگاه ویکی‌پدیا</button></div>`;
+      }
+    }
+
+    function render(list, q){
+      $("resultCount").textContent = list.length;
+      const root = $("results");
+      
+      if(list.length === 0){
+        root.innerHTML = `<div class="empty">نتیجه‌ای پیدا نشد.</div>`;
+        return;
+      }
+
+      root.innerHTML = list.slice(0, 150).map(item => {
+        const len = getWordLength(item.a);
+        const ansHl = highlight(item.a, q);
+        const clueHl = highlight(item.c, q);
+        const safeWord = (item.a || "").replace(/'/g, "\\'");
+
+        return `
+          <div class="card" onclick="copyWord('${safeWord}')">
+            <div class="ans-row">
+              <span class="ans">${ansHl}</span>
+              <div class="ans-left">
+                <span class="letter-badge">${len} حرفی</span>
+                <button class="wiki-icon-btn" onclick="openWiki('${safeWord}', event)">📖 ویکی‌پدیا</button>
+              </div>
+            </div>
+            <div class="clue">${clueHl}</div>
+            ${item.cat ? `<div class="tag">#${item.cat}</div>` : ``}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function doSearch(){
+      const rawQ = $("searchInput").value.trim();
+
+      if (state.filter === "wikipedia") {
+        searchWikipediaLive(rawQ);
+        return;
+      }
+
+      const targetLen = parseInt($("lenInput").value, 10);
+      const scoredResults = [];
+
+      for (let i = 0; i < MASTER_DATA.length; i++) {
+        const it = MASTER_DATA[i];
+        if (!it) continue;
+
+        if (!matchesFilter(it, state.filter)) continue;
+        if (!matchesLength(it, targetLen)) continue;
+
+        const evalRes = evaluateMatch(it, rawQ);
+        if (evalRes.matched) {
+          scoredResults.push({ item: it, score: evalRes.score });
+        }
+      }
+
+      scoredResults.sort((a, b) => b.score - a.score);
+      render(scoredResults.map(r => r.item), rawQ);
+    }
+
+    const searchInput = $("searchInput");
+    const clearBtn = $("clearBtn");
+
+    function checkClearBtn(){
+      clearBtn.style.display = searchInput.value ? "block" : "none";
+    }
+
+    clearBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      checkClearBtn();
+      searchInput.focus();
+      doSearch();
+    });
+
+    let timeoutId = null;
+    function debouncedSearch(){
+      checkClearBtn();
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(doSearch, 180);
+    }
+
+    $("searchBtn").addEventListener("click", doSearch);
+    searchInput.addEventListener("input", debouncedSearch);
+    $("lenInput").addEventListener("input", debouncedSearch);
+    searchInput.addEventListener("keydown", (e) => { if(e.key === "Enter") doSearch(); });
+
+    // کلیک روی تب‌های ردیف اول
+    $("filters").addEventListener("click", (e)=>{
+      const btn = e.target.closest("button[data-filter]");
+      if(!btn) return;
+      state.filter = btn.dataset.filter;
+
+      document.querySelectorAll(".chip").forEach(b => b.classList.remove("active"));
+      $("wikiTabBtn").classList.remove("active");
+      btn.classList.add("active");
+
+      doSearch();
+    });
+
+    // کلیک روی تب اختصاصی ردیف دوم (ویکی‌پدیا)
+    $("wikiTabBtn").addEventListener("click", () => {
+      state.filter = "wikipedia";
+      document.querySelectorAll(".chip").forEach(b => b.classList.remove("active"));
+      $("wikiTabBtn").classList.add("active");
+      doSearch();
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      initData();
+      searchInput.value = "";
+      checkClearBtn();
+      doSearch();
+    });
+  </script>
+</body>
+</html>
