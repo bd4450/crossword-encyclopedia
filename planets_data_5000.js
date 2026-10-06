@@ -1,3 +1,4 @@
+window.PLANTS_DATA = window.CROSSWORD_DATA.splice(0); // انتقال همه به PLANTS_DATA
 // دانشنامه دانشیار - بانک جامع گیاهان (۵۰۰۰ رکورد)
 window.CROSSWORD_DATA = window.CROSSWORD_DATA || [];
 window.CROSSWORD_DATA.push(
